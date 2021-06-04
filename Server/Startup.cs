@@ -1,11 +1,15 @@
+using System.Diagnostics;
+using System.IO;
+using System.Reflection;
+using Ata.DeloSled.Server.Handlers;
+using MediatR;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.ResponseCompression;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using System.Linq;
+using Newtonsoft.Json;
 
 namespace Ata.DeloSled.Server
 {
@@ -23,8 +27,7 @@ namespace Ata.DeloSled.Server
         public void ConfigureServices(IServiceCollection services)
         {
 
-            services.AddControllersWithViews();
-            services.AddRazorPages();
+            services.AddMediatR(typeof(ForecastQueryHandler).GetTypeInfo().Assembly);
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -50,8 +53,33 @@ namespace Ata.DeloSled.Server
 
             app.UseEndpoints(endpoints =>
             {
-                endpoints.MapRazorPages();
-                endpoints.MapControllers();
+                endpoints.MapPost("/rpc",
+                    async context =>
+                    {
+
+                        StreamReader reader = new StreamReader(context.Request.Body);
+                        string requestJson = await reader.ReadToEndAsync();
+
+                        JsonSerializerSettings settings = new JsonSerializerSettings()
+                        {
+                            PreserveReferencesHandling = PreserveReferencesHandling.Objects,
+                            ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
+                            NullValueHandling = NullValueHandling.Include,
+                            TypeNameHandling = TypeNameHandling.All
+                        };
+
+                        object? requestObject = JsonConvert.DeserializeObject(requestJson, settings);
+
+                        IMediator? mediator = context.RequestServices.GetService<IMediator>();
+
+                        Debug.Assert(mediator != null, nameof(mediator) + " != null");
+                        object? commandQueryResponse = await mediator.Send(requestObject);
+
+                        string responseJson = JsonConvert.SerializeObject(commandQueryResponse, settings);
+
+                        await context.Response.WriteAsync(responseJson);
+                    });
+                    // .RequireAuthorization();
                 endpoints.MapFallbackToFile("index.html");
             });
         }
