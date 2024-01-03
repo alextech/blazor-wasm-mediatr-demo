@@ -1,6 +1,5 @@
 using System.Diagnostics;
 using System.IO;
-using System.Reflection;
 using Ata.DeloSled.Server.Handlers;
 using MediatR;
 using Microsoft.AspNetCore.Builder;
@@ -27,7 +26,7 @@ namespace Ata.DeloSled.Server
         public void ConfigureServices(IServiceCollection services)
         {
 
-            services.AddMediatR(typeof(ForecastQueryHandler).GetTypeInfo().Assembly);
+            services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining(typeof(ForecastQueryHandler)));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

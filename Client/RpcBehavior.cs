@@ -8,7 +8,7 @@ using Newtonsoft.Json;
 
 namespace Ata.DeloSled.Client
 {
-    public class RpcBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
+    public class RpcBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse> where TRequest : notnull
     {
         private readonly HttpClient _httpClient;
 
@@ -17,7 +17,7 @@ namespace Ata.DeloSled.Client
             _httpClient = httpClient;
         }
 
-        public async Task<TResponse> Handle(TRequest request, CancellationToken cancellationToken, RequestHandlerDelegate<TResponse> next)
+        public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
         {
 
             JsonSerializerSettings settings = new JsonSerializerSettings()
